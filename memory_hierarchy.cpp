@@ -106,24 +106,25 @@ uint64_t CacheLevel::reconstruct_addr(uint64_t tag, uint64_t index) {
 }
 
 /**
- * @param TODO what is the param????
+ * @param index is the set index
  */
 void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64_t cycle) {
-    // TODO: Task 1 / Task 2
-    // Move dirty write-back logic into this helper.
+    // // TODO: Task 1 / Task 2
     // Suggested steps:
     // 1. If the victim is not dirty, return immediately.
     // 2. If there is no next level, return immediately.
     // 3. Increment the write-back counter.
     // 4. Reconstruct the evicted block address from tag + index.
     // 5. Send a write access to the next level.
-    (void)line;
-    (void)index;
-    (void)cycle;
+    // Move dirty write-back logic into this helper.
+    if (!line.dirty || this->next_level == nullptr) return;
+    write_backs++;
+    uint64_t addr = reconstruct_addr(line.tag, index);
+    this->next_level->access(addr, 'w', cycle); // write
 }
 
 int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
-    // TODO: Task 1
+    // // TODO: Task 1
     // 1. Derive the address fields for the current cache geometry:
     //    - block offset bits
     //    - set index bits
@@ -160,7 +161,7 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     //    - install the new cache line and call policy->onMiss(...)
     misses++;
     int victim_way_index = policy->getVictim(current_set);
-    write_back_victim(current_set[victim_way_index], victim_way_index, cycle); // TODO need check with write_back_victim param, ALSO why need cycle???
+    write_back_victim(current_set[victim_way_index], index, cycle); // TODO cycle is probably current cycle, needed by write_back_victim
 
     // 6. Your code should work correctly even if cache size, associativity,
     //    number of sets, or cache line size changes.
