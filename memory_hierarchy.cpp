@@ -117,20 +117,36 @@ void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64
 }
 
 int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
-    int lat = config.latency;
-
-    // TODO: Task 1
     // 1. Derive the address fields for the current cache geometry:
     //    - block offset bits
     //    - set index bits
     //    - tag bits
+    int lat = config.latency;
+    uint64_t index = get_index(addr);
+    uint64_t tag = get_tag(addr);
+
     // 2. Use the address to compute index/tag and select the set.
+    auto& set = sets[index]; // the row
+
     // 3. Search all ways for a valid tag match.
-    // 4. On hit:
-    //    - increment hits
-    //    - call policy->onHit(...)
-    //    - update dirty bit for writes
-    //    - clear is_prefetched if a prefetched line is consumed
+    for (auto& line : set){
+        if (line.tag == tag){
+            // 4. On hit:
+            //    - increment hits
+            //    - call policy->onHit(...)
+            //    - update dirty bit for writes
+            //    - clear is_prefetched if a prefetched line is consumed
+            hits++;
+            policy->onHit(); // TODO????
+            line.dirty = true;
+
+            break;
+        }
+    }
+
+
+
+    // TODO: Task 1
     // 5. On miss:
     //    - increment misses
     //    - find an invalid line or select a victim with policy->getVictim(...)
