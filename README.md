@@ -15,11 +15,11 @@ Person A
 Person B
 - ~~Implement reconstruct_addr() in memory_hierarchy.cpp~~
 
-~~- Implement LRU::onHit() in repl_policy.cpp~~
+- ~~Implement LRU::onHit() in repl_policy.cpp~~
 
-~~- Implement LRU::onMiss() in repl_policy.cpp~~
+- ~~Implement LRU::onMiss() in repl_policy.cpp~~
 
-~~- Implement LRU::getVictim() in repl_policy.cpp~~
+- ~~Implement LRU::getVictim() in repl_policy.cpp~~
 
 ### Task 2
 Person A
