@@ -8,6 +8,7 @@
 /**
  * In the case of a cache hit (is in the cache),
  * mark the specified cache line as most recently used.
+ * @param way index of the set
  */
 void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
     if (way >= set.size()) return;
@@ -22,6 +23,7 @@ void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
 /**
  * In the case of a cache miss (not in the cache), 
  * initialize a new cache line in the set for it.
+ * @param way index of the set
  */
 void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
     if (way >= set.size()) return;
@@ -36,6 +38,7 @@ void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
 /**
  * Get the least (oldest) recently used cache line 
  * indicated by the last access cycle timestamp.
+ * @return way index of the victim
  */
 int LRUPolicy::getVictim(std::vector<CacheLine>& set) {
     // always prioritize invalid cache line

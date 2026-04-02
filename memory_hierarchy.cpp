@@ -105,6 +105,9 @@ uint64_t CacheLevel::reconstruct_addr(uint64_t tag, uint64_t index) {
     // return 0;
 }
 
+/**
+ * @param TODO what is the param????
+ */
 void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64_t cycle) {
     // TODO: Task 1 / Task 2
     // Move dirty write-back logic into this helper.
@@ -120,6 +123,7 @@ void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64
 }
 
 int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
+    // TODO: Task 1
     // 1. Derive the address fields for the current cache geometry:
     //    - block offset bits
     //    - set index bits
@@ -129,10 +133,11 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     uint64_t tag = get_tag(addr);
 
     // 2. Use the address to compute index/tag and select the set.
-    auto& set = sets[index]; // the row
+    auto& current_set = sets[index]; // the current row
 
     // 3. Search all ways for a valid tag match.
-    for (auto& line : set){
+    for (size_t i = 0; i < current_set.size(); i++){
+        auto& line = current_set[i];
         if (line.tag == tag){
             // 4. On hit:
             //    - increment hits
@@ -140,31 +145,29 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             //    - update dirty bit for writes
             //    - clear is_prefetched if a prefetched line is consumed
             hits++;
-            policy->onHit(); // TODO????
+            policy->onHit(current_set, i, cycle); // cycle = current_cycle
             line.dirty = true;
-
+            if (line.is_prefetched) // TODO im not sure
+                line.is_prefetched = false; 
             break;
         }
     }
-
-
-
-    // TODO: Task 1
     // 5. On miss:
     //    - increment misses
     //    - find an invalid line or select a victim with policy->getVictim(...)
     //    - call write_back_victim(...) if the chosen victim is dirty
     //    - fetch the requested block from next_level and add that latency to lat
     //    - install the new cache line and call policy->onMiss(...)
+    misses++;
+    int victim_way_index = policy->getVictim(current_set);
+    write_back_victim(current_set[victim_way_index], victim_way_index, cycle); // TODO need check with write_back_victim param, ALSO why need cycle???
+
     // 6. Your code should work correctly even if cache size, associativity,
     //    number of sets, or cache line size changes.
-    // 7. Task 3: after demand access logic works, call the prefetcher here and
+    // TODO Task 3: 
+    // 7. after demand access logic works, call the prefetcher here and
     //    install returned blocks through install_prefetch(...).
-
-    (void)addr;
-    (void)type;
-    (void)cycle;
-    return lat;
+    return lat; // main expects return latency
 }
 
 void CacheLevel::install_prefetch(uint64_t addr, uint64_t cycle) {
