@@ -141,7 +141,7 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             //    - update dirty bit for writes
             //    - clear is_prefetched if a prefetched line is consumed
             hits++;
-            policy->onHit(set, config.associativity, cycle); // TODO is this cycle right?? wrong kayaknya, needs to be current cycle + latency ish
+            policy->onHit(set, config.associativity, cycle); // cycle = current_cycle
             line.dirty = true;
             if (line.is_prefetched) 
                 line.is_prefetched = false; // TODO im not sure
@@ -157,13 +157,13 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     misses++;
     int victim_index = policy->getVictim(set);
     if (set[victim_index].dirty) 
-        write_back_victim(set[victim_index], victim_index, cycle); // TODO shit the cycle
+        write_back_victim(set[victim_index], victim_index, cycle); // TODO shit the cycle im not sure
     // 6. Your code should work correctly even if cache size, associativity,
     //    number of sets, or cache line size changes.
     // TODO Task 3: 
     // 7. after demand access logic works, call the prefetcher here and
     //    install returned blocks through install_prefetch(...).
-    return lat;
+    return lat; // main expects return latency
 }
 
 void CacheLevel::install_prefetch(uint64_t addr, uint64_t cycle) {
