@@ -46,19 +46,27 @@ CacheLevel::~CacheLevel() {
 }
 
 uint64_t CacheLevel::get_index(uint64_t addr) {
-    // TODO: Task 1
-    // Compute the set index from the address.
-    // Hint: remove block offset bits first, then keep only the index bits.
-    (void)addr;
-    return 0;
+    // // TODO: Task 1
+    uint64_t bytes_per_set = config.block_size * config.associativity;
+    uint64_t byte_offset_bit_count = log2(bytes_per_set); 
+    uint64_t set_count = config.size_kb * 1024 / bytes_per_set;
+    uint64_t index_bit_count = log2(set_count);
+
+    //* chop index_bit_count upper, and byte_offset_bit_count lower
+    addr >>= byte_offset_bit_count;
+    uint64_t mask = (1ULL << index_bit_count) - 1;
+    return (addr & mask);
 }
 
 uint64_t CacheLevel::get_tag(uint64_t addr) {
-    // TODO: Task 1
-    // Compute the tag from the address.
-    // Hint: shift away both block offset bits and set index bits.
-    (void)addr;
-    return 0;
+    // // TODO: Task 1
+    uint64_t bytes_per_set = config.block_size * config.associativity;
+    uint64_t byte_offset_bit_count = log2(bytes_per_set); 
+    uint64_t set_count = config.size_kb * 1024 / bytes_per_set;
+    uint64_t index_bit_count = log2(set_count);
+
+    addr >>= (index_bit_count + byte_offset_bit_count);
+    return addr;
 }
 
 uint64_t CacheLevel::reconstruct_addr(uint64_t tag, uint64_t index) {
