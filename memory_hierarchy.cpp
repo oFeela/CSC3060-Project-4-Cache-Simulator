@@ -46,19 +46,14 @@ CacheLevel::~CacheLevel() {
 }
 
 uint64_t CacheLevel::get_index(uint64_t addr) {
-    // TODO: Task 1
-    // Compute the set index from the address.
-    // Hint: remove block offset bits first, then keep only the index bits.
-    (void)addr;
-    return 0;
+    addr >>= offset_bits;
+    uint64_t mask = (1ULL << index_bits) - 1;
+    return (addr & mask);
 }
 
 uint64_t CacheLevel::get_tag(uint64_t addr) {
-    // TODO: Task 1
-    // Compute the tag from the address.
-    // Hint: shift away both block offset bits and set index bits.
-    (void)addr;
-    return 0;
+    addr >>= (index_bits + offset_bits);
+    return addr;
 }
 
 /**
@@ -125,20 +120,36 @@ void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64
 }
 
 int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
-    int lat = config.latency;
-
-    // TODO: Task 1
     // 1. Derive the address fields for the current cache geometry:
     //    - block offset bits
     //    - set index bits
     //    - tag bits
+    int lat = config.latency;
+    uint64_t index = get_index(addr);
+    uint64_t tag = get_tag(addr);
+
     // 2. Use the address to compute index/tag and select the set.
+    auto& set = sets[index]; // the row
+
     // 3. Search all ways for a valid tag match.
-    // 4. On hit:
-    //    - increment hits
-    //    - call policy->onHit(...)
-    //    - update dirty bit for writes
-    //    - clear is_prefetched if a prefetched line is consumed
+    for (auto& line : set){
+        if (line.tag == tag){
+            // 4. On hit:
+            //    - increment hits
+            //    - call policy->onHit(...)
+            //    - update dirty bit for writes
+            //    - clear is_prefetched if a prefetched line is consumed
+            hits++;
+            policy->onHit(); // TODO????
+            line.dirty = true;
+
+            break;
+        }
+    }
+
+
+
+    // TODO: Task 1
     // 5. On miss:
     //    - increment misses
     //    - find an invalid line or select a victim with policy->getVictim(...)
