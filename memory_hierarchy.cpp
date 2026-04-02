@@ -120,6 +120,7 @@ void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64
 }
 
 int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
+    // TODO: Task 1
     // 1. Derive the address fields for the current cache geometry:
     //    - block offset bits
     //    - set index bits
@@ -140,30 +141,28 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             //    - update dirty bit for writes
             //    - clear is_prefetched if a prefetched line is consumed
             hits++;
-            policy->onHit(); // TODO????
+            policy->onHit(set, config.associativity, cycle); // TODO is this cycle right?? wrong kayaknya, needs to be current cycle + latency ish
             line.dirty = true;
-
+            if (line.is_prefetched) 
+                line.is_prefetched = false; // TODO im not sure
             break;
         }
     }
-
-
-
-    // TODO: Task 1
     // 5. On miss:
     //    - increment misses
     //    - find an invalid line or select a victim with policy->getVictim(...)
     //    - call write_back_victim(...) if the chosen victim is dirty
     //    - fetch the requested block from next_level and add that latency to lat
     //    - install the new cache line and call policy->onMiss(...)
+    misses++;
+    int victim_index = policy->getVictim(set);
+    if (set[victim_index].dirty) 
+        write_back_victim(set[victim_index], victim_index, cycle); // TODO shit the cycle
     // 6. Your code should work correctly even if cache size, associativity,
     //    number of sets, or cache line size changes.
-    // 7. Task 3: after demand access logic works, call the prefetcher here and
+    // TODO Task 3: 
+    // 7. after demand access logic works, call the prefetcher here and
     //    install returned blocks through install_prefetch(...).
-
-    (void)addr;
-    (void)type;
-    (void)cycle;
     return lat;
 }
 
