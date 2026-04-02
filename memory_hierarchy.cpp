@@ -105,6 +105,9 @@ uint64_t CacheLevel::reconstruct_addr(uint64_t tag, uint64_t index) {
     // return 0;
 }
 
+/**
+ * @param TODO what is the param????
+ */
 void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64_t cycle) {
     // TODO: Task 1 / Task 2
     // Move dirty write-back logic into this helper.
@@ -130,10 +133,11 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     uint64_t tag = get_tag(addr);
 
     // 2. Use the address to compute index/tag and select the set.
-    auto& set = sets[index]; // the row
+    auto& current_set = sets[index]; // the current row
 
     // 3. Search all ways for a valid tag match.
-    for (auto& line : set){
+    for (size_t i = 0; i < current_set.size(); i++){
+        auto& line = current_set[i];
         if (line.tag == tag){
             // 4. On hit:
             //    - increment hits
@@ -141,10 +145,10 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             //    - update dirty bit for writes
             //    - clear is_prefetched if a prefetched line is consumed
             hits++;
-            policy->onHit(set, config.associativity, cycle); // cycle = current_cycle
+            policy->onHit(current_set, i, cycle); // cycle = current_cycle
             line.dirty = true;
-            if (line.is_prefetched) 
-                line.is_prefetched = false; // TODO im not sure
+            if (line.is_prefetched) // TODO im not sure
+                line.is_prefetched = false; 
             break;
         }
     }
@@ -155,9 +159,9 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     //    - fetch the requested block from next_level and add that latency to lat
     //    - install the new cache line and call policy->onMiss(...)
     misses++;
-    int victim_index = policy->getVictim(set);
-    if (set[victim_index].dirty) 
-        write_back_victim(set[victim_index], victim_index, cycle); // TODO shit the cycle im not sure
+    int victim_way_index = policy->getVictim(current_set);
+    write_back_victim(current_set[victim_way_index], victim_way_index, cycle); // TODO need check with write_back_victim param, ALSO why need cycle???
+
     // 6. Your code should work correctly even if cache size, associativity,
     //    number of sets, or cache line size changes.
     // TODO Task 3: 
