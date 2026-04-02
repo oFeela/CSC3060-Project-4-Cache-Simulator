@@ -117,9 +117,7 @@ void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64
     // 4. Reconstruct the evicted block address from tag + index.
     // 5. Send a write access to the next level.
     // Move dirty write-back logic into this helper.
-    std::cout << "hi: " << line.dirty << std::endl; // BUG
     if (!line.dirty || this->next_level == nullptr) return;
-    std::cout << "hi 2" << std::endl; // BUG
     write_backs++;
     uint64_t addr = reconstruct_addr(line.tag, index);
     this->next_level->access(addr, 'w', cycle); // write
@@ -150,8 +148,7 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             //    - clear is_prefetched if a prefetched line is consumed
             hits++;
             policy->onHit(current_set, i, cycle); // cycle = current_cycle
-            std::cout << type << std::endl; // BUG
-            if (type == 'w') line.dirty = true; // BUG
+            line.dirty = (type == 'w');
             if (line.is_prefetched) // TODO im not sure
                 line.is_prefetched = false; 
             return lat;
@@ -175,7 +172,7 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
 
     //* pretend to install new cache line
     current_set[victim_way_index].valid = true;
-    current_set[victim_way_index].dirty = false;
+    current_set[victim_way_index].dirty = (type == 'w');
     current_set[victim_way_index].is_prefetched = false; // TODO correct? IDK TBH
     current_set[victim_way_index].tag = tag;
 
