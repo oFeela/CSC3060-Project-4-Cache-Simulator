@@ -24,6 +24,7 @@ void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
  * In the case of a cache miss (not in the cache), 
  * initialize a new cache line in the set for it.
  * @param way index of the set
+ * TODO but init new line is already in access()
  */
 void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
     if (way >= set.size()) return;

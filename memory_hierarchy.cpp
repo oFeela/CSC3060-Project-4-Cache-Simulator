@@ -121,6 +121,7 @@ void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64
     write_backs++;
     uint64_t addr = reconstruct_addr(line.tag, index);
     this->next_level->access(addr, 'w', cycle); // write
+    // TODO does the cycle need to be added with latency? i dont have latency
 }
 
 int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
@@ -147,10 +148,10 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             //    - clear is_prefetched if a prefetched line is consumed
             hits++;
             policy->onHit(current_set, i, cycle); // cycle = current_cycle
-            line.dirty = true;
+            if (type == 'w') line.dirty = true;
             if (line.is_prefetched) // TODO im not sure
                 line.is_prefetched = false; 
-            break;
+            return lat;
         }
     }
     // 5. On miss:
@@ -163,12 +164,26 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     int victim_way_index = policy->getVictim(current_set);
     write_back_victim(current_set[victim_way_index], index, cycle); // TODO cycle is probably current cycle, needed by write_back_victim
 
+
+    // fetch next level
+    //* MEM access can't possibly miss, so we just consider L1 access L2, or L2 access MEM
+    if (next_level != nullptr)
+        lat += this->next_level->access(addr, type, cycle);
+
+    //* pretend to install new cache line
+    current_set[victim_way_index].valid = true;
+    current_set[victim_way_index].dirty = 0;
+    current_set[victim_way_index].is_prefetched = false; // TODO correct? IDK TBH
+    current_set[victim_way_index].tag = tag;
+
+    policy->onMiss(current_set, victim_way_index, cycle);
+
     // 6. Your code should work correctly even if cache size, associativity,
     //    number of sets, or cache line size changes.
     // TODO Task 3: 
     // 7. after demand access logic works, call the prefetcher here and
     //    install returned blocks through install_prefetch(...).
-    return lat; // main expects return latency
+    return lat; // memory will have its own latency unchanged, because no addition
 }
 
 void CacheLevel::install_prefetch(uint64_t addr, uint64_t cycle) {
