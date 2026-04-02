@@ -61,6 +61,9 @@ uint64_t CacheLevel::get_tag(uint64_t addr) {
     return 0;
 }
 
+/**
+ * Reconstructs the 64-bits address from a given tag and set index.
+ */
 uint64_t CacheLevel::reconstruct_addr(uint64_t tag, uint64_t index) {
     // TODO: Task 1 / Task 2
     // Rebuild a block-aligned address from a tag and set index.
