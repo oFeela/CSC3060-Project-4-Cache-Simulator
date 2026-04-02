@@ -65,9 +65,46 @@ uint64_t CacheLevel::reconstruct_addr(uint64_t tag, uint64_t index) {
     // TODO: Task 1 / Task 2
     // Rebuild a block-aligned address from a tag and set index.
     // This helper is useful when writing back an evicted dirty line.
-    (void)tag;
-    (void)index;
-    return 0;
+
+    // index bits cnt from log2(#of sets)
+    // byte offset bits cnt from log2(size of cache line)
+    // tag = 64 - index - byte
+
+    // tag | index | byte
+    // start from 00....00
+    // append tag, index, byte
+    // append by shifting appropriately and OR'ing
+    // 0000, append (0)111 at the MSB --> shift by (4 - 3)
+    // shift by 64 - tag size for tag
+    // 0000, append (000)1 AFTER the tag bits, so it means you only have 64 - tag_size bits left
+    // same logic
+    // IT WORKS assuming the high bits for tag/index are all 0's (which should be the case from get_index, get_tag) 
+    // unless the given tag, index are not from those helpers
+
+    // 1st ver:
+    // static const uint32_t bits_cnt = 64;
+    // uint32_t tag_bits = bits_cnt - (this->offset_bits + this->index_bits);
+    // uint32_t tag_shift = bits_cnt - tag_bits;
+    // uint32_t index_shift = tag_shift - index_bits;
+    
+    // uint64_t ans = 0;
+    // ans |= tag << tag_shift;
+    // ans |= index << index_shift;
+
+    // return ans;
+    
+    // 2nd ver:
+    // uint64_t ans = 0;
+    // ans |= tag << this->offset_bits + this->index_bits;
+    // ans |= index << this->offset_bits;
+
+    // return ans;
+
+    return (tag << (this->offset_bits + this->index_bits)) | (index << this->offset_bits);
+
+    // (void)tag;
+    // (void)index;
+    // return 0;
 }
 
 void CacheLevel::write_back_victim(const CacheLine& line, uint64_t index, uint64_t cycle) {
