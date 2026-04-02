@@ -23,22 +23,22 @@ Person B
 
 ### Task 2
 Person A
-- Add --enable-l2 flag parsing in main.cpp
+- ~~Add --enable-l2 flag parsing in main.cpp~~
 
-- Create L2 CacheLevel object in main.cpp
+- ~~Create L2 CacheLevel object in main.cpp~~
 
-- Connect L1 next_level pointer to L2 in main.cpp
+- ~~Connect L1 next_level pointer to L2 in main.cpp~~
 
-- Set L2 next_level pointer to Main Memory in main.cpp
+- ~~Set L2 next_level pointer to Main Memory in main.cpp~~
 
 Person B
-- Add L2 access counter variable in memory_hierarchy.cpp
+- ~~Add L2 access counter variable in memory_hierarchy.cpp~~
 
-- Add L2 hit counter variable in memory_hierarchy.cpp
+- ~~Add L2 hit counter variable in memory_hierarchy.cpp~~
 
-- Add L2 miss counter variable in memory_hierarchy.cpp
+- ~~Add L2 miss counter variable in memory_hierarchy.cpp~~
 
-- Add L2 write-back counter variable in memory_hierarchy.cpp
+- ~~Add L2 write-back counter variable in memory_hierarchy.cpp~~
 
 - Print L2 statistics in simulation output in memory_hierarchy.cpp
 
