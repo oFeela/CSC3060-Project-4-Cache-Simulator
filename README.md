@@ -13,13 +13,13 @@ Person A
 - Implement miss handling (victim selection, write-back, fetch, install) in CacheLevel::access()
 
 Person B
-- Implement reconstruct_addr() in memory_hierarchy.cpp
+- ~~Implement reconstruct_addr() in memory_hierarchy.cpp~~
 
-- Implement LRU::get_victim() in repl_policy.cpp
+- Implement LRU::onHit() in repl_policy.cpp
 
-- Implement LRU::update_replacement_state() in repl_policy.cpp
+- Implement LRU::onMiss() in repl_policy.cpp
 
-- Implement LRU::invalidate() in repl_policy.cpp
+- Implement LRU::getVictim() in repl_policy.cpp
 
 ### Task 2
 Person A
@@ -46,22 +46,22 @@ Person B
 Person A
 - Add RRPV field to CacheLine struct in defs.h
 
-- Implement SRRIP::get_victim() in repl_policy.cpp
+- Implement SRRIP::onHit() in repl_policy.cpp
 
-- Implement SRRIP::update_replacement_state() in repl_policy.cpp
+- Implement SRRIP::onMiss() in repl_policy.cpp
 
-- Implement SRRIP::invalidate() in repl_policy.cpp
+- Implement SRRIP::getVictim() in repl_policy.cpp
 
-- Implement StridePrefetcher::prefetch() in prefetcher.cpp
+- Implement StridePrefetcher::calculatePrefetch() in prefetcher.cpp
 
 Person B
-- Implement BIP::get_victim() in repl_policy.cpp
+- Implement BIP::onHit() in repl_policy.cpp
 
-- Implement BIP::update_replacement_state() in repl_policy.cpp
+- Implement BIP::onMiss() in repl_policy.cpp
 
-- Implement BIP::invalidate() in repl_policy.cpp
+- Implement BIP::getVictim() in repl_policy.cpp
 
-- Implement NextLinePrefetcher::prefetch() in prefetcher.cpp
+- Implement NextLinePrefetcher::calculatePrefetch() in prefetcher.cpp
 
 - Implement install_prefetch() in memory_hierarchy.cpp
 
