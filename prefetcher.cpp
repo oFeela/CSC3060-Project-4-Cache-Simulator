@@ -9,15 +9,19 @@
  * @param miss only triggered on miss? IDK
  */
 std::vector<uint64_t> NextLinePrefetcher::calculatePrefetch(uint64_t current_addr, bool miss) {
-    (void)current_addr;
-    (void)miss;
+    // (void)current_addr;
+    // (void)miss;
     std::vector<uint64_t> prefetches;
+    int64_t prefetch_count = 1; // how many next blocks to prefetch, default is 1, literally next line
 
     // R shifts by log2(block_size)
     // shift L back
+
     uint64_t current_block = (current_addr / block_size) * block_size;
-    uint64_t next_block = current_block + block_size;
-    prefetches.push_back(next_block);
+    for (int64_t i = 1; i <= prefetch_count; i++){
+        uint64_t next_block = current_block + block_size * i;
+        prefetches.push_back(next_block);
+    }
 
     // TODO: Task 3
     // 1. Align current_addr down to the current cache block.
@@ -94,8 +98,32 @@ std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr,
     // 4. Update last_block / last_stride / confidence.
 }
 
+/**
+ * @return vector of addresses to prefetch
+ ** CacheLevel will install them to the cache
+ * @param current_addr that triggered prefetch
+ * @param miss only triggered on miss? IDK
+ */
+std::vector<uint64_t> RegionPrefetcher::calculatePrefetch(uint64_t current_addr, bool miss) {
+    // (void)current_addr;
+    // (void)miss;
+    std::vector<uint64_t> prefetches;
+    int64_t prefetch_count = 64; // how many next blocks to prefetch, default is 1, literally next line
+
+    uint64_t current_block = (current_addr / block_size) * block_size;
+    for (int64_t i = -prefetch_count; i <= prefetch_count; i++) {
+        if (i == 0) continue;
+        uint64_t next_block = current_block + block_size * i;
+        prefetches.push_back(next_block);
+    }
+
+    return prefetches;
+}
+
+
 Prefetcher* createPrefetcher(std::string name, uint32_t block_size) {
     if (name == "NextLine") return new NextLinePrefetcher(block_size);
     if (name == "Stride") return new StridePrefetcher(block_size);
+    if (name == "Region") return new RegionPrefetcher(block_size);
     return new NoPrefetcher();
 }

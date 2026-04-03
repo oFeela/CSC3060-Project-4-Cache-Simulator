@@ -24,6 +24,15 @@ public:
     std::string getName() override { return "NextLine"; }
 };
 
+class RegionPrefetcher : public Prefetcher {
+private:
+    uint32_t block_size;
+public:
+    explicit RegionPrefetcher(uint32_t bs) : block_size(bs) {}
+    std::vector<uint64_t> calculatePrefetch(uint64_t current_addr, bool miss) override;
+    std::string getName() override { return "NextLine"; }
+};
+
 class StridePrefetcher : public Prefetcher {
 private:
     uint32_t block_size; //* number of bytes
