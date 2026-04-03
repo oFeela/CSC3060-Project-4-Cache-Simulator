@@ -4,13 +4,13 @@ The fourth project of CSC3060 2026.
 ## Task Split - No Dependencies (I hope) Between Persons
 ### Task 1
 Person A
-- Implement get_index() in memory_hierarchy.cpp
+- ~~Implement get_index() in memory_hierarchy.cpp~~
 
-- Implement get_tag() in memory_hierarchy.cpp
+- ~~Implement get_tag() in memory_hierarchy.cpp~~
 
-- Implement hit detection logic in CacheLevel::access()
+- ~~Implement hit detection logic in CacheLevel::access()~~
 
-- Implement miss handling (victim selection, write-back, fetch, install) in CacheLevel::access()
+- ~~Implement miss handling (victim selection, write-back, fetch, install) in CacheLevel::access()~~
 
 Person B
 - ~~Implement reconstruct_addr() in memory_hierarchy.cpp~~
@@ -40,12 +40,10 @@ Person B
 
 - ~~Add L2 write-back counter variable in memory_hierarchy.cpp~~
 
-- Print L2 statistics in simulation output in memory_hierarchy.cpp
+- ~~Print L2 statistics in simulation output in memory_hierarchy.cpp~~
 
 ### Task 3
 Person A
-- Add RRPV field to CacheLine struct in defs.h
-
 - Implement SRRIP::onHit() in repl_policy.cpp
 
 - Implement SRRIP::onMiss() in repl_policy.cpp
@@ -55,13 +53,13 @@ Person A
 - Implement StridePrefetcher::calculatePrefetch() in prefetcher.cpp
 
 Person B
-- Implement BIP::onHit() in repl_policy.cpp
+- ~~Implement BIP::onHit() in repl_policy.cpp~~
 
-- Implement BIP::onMiss() in repl_policy.cpp
+- ~~Implement BIP::onMiss() in repl_policy.cpp~~
 
-- Implement BIP::getVictim() in repl_policy.cpp
+- ~~Implement BIP::getVictim() in repl_policy.cpp~~
 
-- Implement NextLinePrefetcher::calculatePrefetch() in prefetcher.cpp
+- ~~Implement NextLinePrefetcher::calculatePrefetch() in prefetcher.cpp~~
 
 - Implement install_prefetch() in memory_hierarchy.cpp
 
