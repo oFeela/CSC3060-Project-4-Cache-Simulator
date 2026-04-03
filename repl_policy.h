@@ -30,4 +30,11 @@ public:
     int getVictim(std::vector<CacheLine>& set) override;
 };
 
+class ReverseSRRIPPolicy : public ReplacementPolicy {
+public:
+    void onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) override;
+    void onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) override;
+    int getVictim(std::vector<CacheLine>& set) override;
+};
+
 #endif

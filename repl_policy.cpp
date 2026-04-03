@@ -22,7 +22,8 @@ void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
 
 /**
  * In the case of a cache miss (not in the cache), 
- * initialize a new cache line in the set for it.
+ * initialize a new cache line in the set for it and
+ * set it as most recently used.
  * @param way index of the set
  */
 void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
@@ -179,8 +180,49 @@ int BIPPolicy::getVictim(std::vector<CacheLine>& set) {
     // return 0;
 }
 
+void ReverseSRRIPPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
+    if (static_cast<size_t>(way) >= set.size()) return;
+    set[way].rrpv = 2;
+
+    // (void)set;
+    // (void)way;
+    // (void)cycle;
+    // // TODO: typically promote the line to RRPV=0.
+}
+
+void ReverseSRRIPPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
+    if (static_cast<size_t>(way) >= set.size()) return;
+    set[way].rrpv = 0;
+
+    // (void)set;
+    // (void)way;
+    // (void)cycle;
+    // // TODO: insert with a long re-reference interval, e.g. RRPV=2.
+}
+
+/**
+ * @return way index of victim
+ */
+int ReverseSRRIPPolicy::getVictim(std::vector<CacheLine>& set) {
+    // TODO i hope this works
+    while (true) {
+        for (size_t i = 0; i < set.size(); i++) {
+            // prioritize invalid ones first
+            if (!set[i].valid || set[i].rrpv == 3) return i; 
+        }
+        for (size_t i = 0; i < set.size(); i++) {
+            set[i].rrpv = std::min(3, set[i].rrpv + 1); // increment but clamp at 3
+        }
+    }
+
+    // (void)set;
+    // // TODO: search for RRPV==3, otherwise age all lines and retry.
+    // return 0;
+}
+
 ReplacementPolicy* createReplacementPolicy(std::string name) {
     if (name == "SRRIP") return new SRRIPPolicy();
     if (name == "BIP") return new BIPPolicy();
+    if (name == "ReverseSRRIP") return new ReverseSRRIPPolicy();
     return new LRUPolicy();
 }
