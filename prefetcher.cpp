@@ -31,10 +31,16 @@ std::vector<uint64_t> NextLinePrefetcher::calculatePrefetch(uint64_t current_add
  ** CacheLevel will install them to the cache
  * @param current_addr that triggered prefetch
  * @param miss only triggered on miss? IDK
+ ** Behavior: {
+        0: null state (only at initial!!!)
+        1: after 1st ever access (CLAMP BOTTOM HERE)
+        2: transient
+        3: two successive equal strides --> prefetch!
+ ** }
  */
 std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr, bool miss) {
-    (void)current_addr;
-    (void)miss;
+    uint32_t threshold = 3; // maximum confidence value
+    uint32_t prefetch_count = 1; // TODO might prefetch same twice
 
     //* calculate address with no bottom bits
     uint64_t current_block = (current_addr / block_size) * block_size;
@@ -42,7 +48,7 @@ std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr,
     // first time access
     if (!this->has_last_block) {
         has_last_block = true;
-        last_block = current_block;
+        last_block = current_block; // introduced prev address
         return {};
     }
 
@@ -50,22 +56,21 @@ std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr,
 
     // second time access
     if (has_last_block && last_stride == 0){
-        last_stride = current_stride;
+        last_stride = current_stride; // introduced stride
         confidence = 1;
         last_block = current_block;
         return {};
     }
 
-    // third and subsequent accesses 
+    // third and all subsequent accesses 
     std::vector<uint64_t> blocks = {};
     if (last_stride == current_stride){
-        confidence++;
+        
+        // clamped increment
+        confidence = (confidence+1 <= threshold) ? confidence+1 : threshold;
 
-        uint32_t threshold = 2;
-        if (confidence >= threshold){
-            //* prefetch (can change N)
-            int N = 2;
-            for (int i = 1; i <= N; i++){
+        if (confidence >= threshold){ // prefetch
+            for (int i = 1; i <= prefetch_count; i++){
                 uint64_t new_block = current_block + (i*last_stride);
                 blocks.push_back(new_block);
             }
@@ -73,13 +78,15 @@ std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr,
     }
     else {
         last_stride = current_stride;
-        confidence--;
+
+        // clamped decrement to 1
+        confidence = (confidence-1 > 0) ? confidence-1 : 1;
     }
 
     last_block = current_block; // update
     return blocks; // may be {}
 
-    // TODO: Task 3
+    // // TODO: Task 3
     // Suggested design:
     // 1. Track the previous accessed block.
     // 2. Compute the current stride in block units.
