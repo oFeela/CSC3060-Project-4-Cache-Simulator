@@ -26,7 +26,7 @@ public:
 
 class StridePrefetcher : public Prefetcher {
 private:
-    uint32_t block_size;
+    uint32_t block_size; //* number of bytes
     bool has_last_block = false;
     uint64_t last_block = 0;
     int64_t last_stride = 0;

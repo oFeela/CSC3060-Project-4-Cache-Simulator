@@ -24,16 +24,10 @@ void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
  * In the case of a cache miss (not in the cache), 
  * initialize a new cache line in the set for it.
  * @param way index of the set
- * TODO but init new line is already in access()
  */
 void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
     if (way >= set.size()) return;
-    set[way].last_access = cycle; // TODO what to assign it????
-    /*
-     * if last_access = cycle: the AMAT is 79 cycles that matches the pdf on BB
-     * if last_access = 0: suddenly the AMAT is 54 cycles LMAOOOOO
-     * bry help 
-     */
+    set[way].last_access = cycle; 
 
     // (void)set;
     // (void)way;
@@ -72,23 +66,42 @@ int LRUPolicy::getVictim(std::vector<CacheLine>& set) {
 }
 
 void SRRIPPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    (void)set;
-    (void)way;
-    (void)cycle;
-    // TODO: typically promote the line to RRPV=0.
+    if (way >= set.size()) return;
+    set[way].rrpv = 0;
+
+    // (void)set;
+    // (void)way;
+    // (void)cycle;
+    // // TODO: typically promote the line to RRPV=0.
 }
 
 void SRRIPPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    (void)set;
-    (void)way;
-    (void)cycle;
-    // TODO: insert with a long re-reference interval, e.g. RRPV=2.
+    if (way >= set.size()) return;
+    set[way].rrpv = 2;
+
+    // (void)set;
+    // (void)way;
+    // (void)cycle;
+    // // TODO: insert with a long re-reference interval, e.g. RRPV=2.
 }
 
+/**
+ * @return way index of victim
+ */
 int SRRIPPolicy::getVictim(std::vector<CacheLine>& set) {
-    (void)set;
-    // TODO: search for RRPV==3, otherwise age all lines and retry.
-    return 0;
+    // TODO i hope this works
+    while (true){
+        for (size_t i = 0; i < set.size(); i++){
+            if (set[i].rrpv == 3) return i;
+        }
+        for (size_t i = 0; i < set.size(); i++){
+            set[i].rrpv = std::min(3, set[i].rrpv+1); // increment but clamp at 3
+        }
+    }
+
+    // (void)set;
+    // // TODO: search for RRPV==3, otherwise age all lines and retry.
+    // return 0;
 }
 
 void BIPPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
