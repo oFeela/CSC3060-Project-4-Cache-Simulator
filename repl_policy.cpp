@@ -11,7 +11,7 @@
  * @param way index of the set
  */
 void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    if (way >= set.size()) return;
+    if (static_cast<size_t>(way) >= set.size()) return;
     set[way].last_access = cycle;
     
     // (void)set;
@@ -27,7 +27,7 @@ void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
  * TODO but init new line is already in access()
  */
 void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    if (way >= set.size()) return;
+    if (static_cast<size_t>(way) >= set.size()) return;
     set[way].last_access = cycle; // TODO what to assign it????
     /*
      * if last_access = cycle: the AMAT is 79 cycles that matches the pdf on BB
