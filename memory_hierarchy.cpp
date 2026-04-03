@@ -210,6 +210,8 @@ void CacheLevel::install_prefetch(uint64_t addr, uint64_t cycle) {
     }
 
     // prepare to prefetch
+    prefetch_issued++;
+    
     int victim_index = this->policy->getVictim(target_set);
     // in case we evict a dirty
     // need to write back to the next cache levels
