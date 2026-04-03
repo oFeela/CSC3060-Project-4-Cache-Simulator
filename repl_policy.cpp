@@ -28,7 +28,12 @@ void LRUPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
  */
 void LRUPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
     if (way >= set.size()) return;
-    set[way].last_access = cycle;
+    set[way].last_access = cycle; // TODO what to assign it????
+    /*
+     * if last_access = cycle: the AMAT is 79 cycles that matches the pdf on BB
+     * if last_access = 0: suddenly the AMAT is 54 cycles LMAOOOOO
+     * bry help 
+     */
 
     // (void)set;
     // (void)way;
