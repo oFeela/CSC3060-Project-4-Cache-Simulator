@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
 
         // TODO: Task 2
         // When --enable-l2 is passed, create the L2 cache and connect it to memory:
-        l2 = new CacheLevel("L2", l2_cfg, memory);
+        l2 = new CacheLevel("L2", l2_cfg, memory); // links l2 -> memory
         // (void)l2_cfg;
     }
 
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
         l1_next = l2;
         // cerr << "Error: --enable-l2 requested, but Task 2 L2 hookup is still TODO in project4/main.cpp" << endl;
         // delete memory;
-        return 1;
+        // return 1;
     }
 
     CacheLevel* l1 = new CacheLevel("L1", l1_cfg, l1_next);
