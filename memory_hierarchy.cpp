@@ -149,8 +149,13 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
             hits++;
             policy->onHit(current_set, i, cycle); // cycle = current_cycle
             line.dirty = (type == 'w');
-            if (line.is_prefetched) // TODO im not sure
+            if (line.is_prefetched) // correct now, if it was a prefetch line, then unmark it
                 line.is_prefetched = false; 
+
+            // TODO call prefetcher here ON HIT??? idk, depends on prefetch design ig
+            // for (uint64_t addr_to_prefetch : prefetcher->calculatePrefetch(addr, false)) {
+            //     this->install_prefetch(addr_to_prefetch, cycle);
+            // }
             return lat;
         }
     }
@@ -183,17 +188,54 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
     // TODO Task 3: 
     // 7. after demand access logic works, call the prefetcher here and
     //    install returned blocks through install_prefetch(...).
+    for (uint64_t addr_to_prefetch : prefetcher->calculatePrefetch(addr, true)) {
+        this->install_prefetch(addr_to_prefetch, cycle);
+    }
+
     return lat; // memory will have its own latency unchanged, because no addition
 }
 
 void CacheLevel::install_prefetch(uint64_t addr, uint64_t cycle) {
+    uint64_t tag = get_tag(addr);
+    uint64_t index = get_index(addr);
+
+    auto& target_set = this->sets[index];
+
+    // search if alr exists + valid
+    for (size_t i = 0; i < target_set.size(); i++) {
+        auto& line = target_set[i];
+        if (line.valid && line.tag == tag) {
+            return;
+        }
+    }
+
+    // prepare to prefetch
+    int victim_index = this->policy->getVictim(target_set);
+    // in case we evict a dirty
+    // need to write back to the next cache levels
+    write_back_victim(target_set[victim_index], index, cycle);
+
+    if (this->next_level != nullptr) {
+        this->next_level->access(addr, 'r', cycle); // read from next level
+        // no data writes needed on the current cache, cuz its just a simulation (bruh)
+    }
+
+    // install a new line on the current cache level
+    target_set[victim_index].valid = true;
+    target_set[victim_index].dirty = false;
+    target_set[victim_index].is_prefetched = true;
+    target_set[victim_index].tag = tag;
+
+    // so, this will install a prefetched line in the current cache
+    // which will be found by :access() later on yayyy
+
     // TODO: Task 3
     // Implement a prefetch fill path similar to the miss path in access(), but
     // treat prefetched lines as clean and mark is_prefetched = true.
     // If you evict a dirty victim during prefetch installation, reuse
     // write_back_victim(...) instead of duplicating that logic.
-    (void)addr;
-    (void)cycle;
+    // (void)addr;
+    // (void)cycle;
 }
 
 void CacheLevel::printStats() {
