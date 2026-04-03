@@ -153,9 +153,9 @@ int CacheLevel::access(uint64_t addr, char type, uint64_t cycle) {
                 line.is_prefetched = false; 
 
             // TODO call prefetcher here ON HIT??? idk, depends on prefetch design ig
-            // for (uint64_t addr_to_prefetch : prefetcher->calculatePrefetch(addr, false)) {
-            //     this->install_prefetch(addr_to_prefetch, cycle);
-            // }
+            for (uint64_t addr_to_prefetch : prefetcher->calculatePrefetch(addr, false)) {
+                this->install_prefetch(addr_to_prefetch, cycle);
+            }
             return lat;
         }
     }
@@ -211,7 +211,7 @@ void CacheLevel::install_prefetch(uint64_t addr, uint64_t cycle) {
 
     // prepare to prefetch
     prefetch_issued++;
-    
+
     int victim_index = this->policy->getVictim(target_set);
     // in case we evict a dirty
     // need to write back to the next cache levels
