@@ -71,7 +71,7 @@ int LRUPolicy::getVictim(std::vector<CacheLine>& set) {
 }
 
 void SRRIPPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    if (way >= set.size()) return;
+    if (static_cast<size_t>(way) >= set.size()) return;
     set[way].rrpv = 0;
 
     // (void)set;
@@ -81,7 +81,7 @@ void SRRIPPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
 }
 
 void SRRIPPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    if (way >= set.size()) return;
+    if (static_cast<size_t>(way) >= set.size()) return;
     set[way].rrpv = 2;
 
     // (void)set;
@@ -95,12 +95,13 @@ void SRRIPPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
  */
 int SRRIPPolicy::getVictim(std::vector<CacheLine>& set) {
     // TODO i hope this works
-    while (true){
-        for (size_t i = 0; i < set.size(); i++){
-            if (set[i].rrpv == 3) return i;
+    while (true) {
+        for (size_t i = 0; i < set.size(); i++) {
+            // prioritize invalid ones first
+            if (!set[i].valid || set[i].rrpv == 3) return i; 
         }
-        for (size_t i = 0; i < set.size(); i++){
-            set[i].rrpv = std::min(3, set[i].rrpv+1); // increment but clamp at 3
+        for (size_t i = 0; i < set.size(); i++) {
+            set[i].rrpv = std::min(3, set[i].rrpv + 1); // increment but clamp at 3
         }
     }
 
@@ -109,25 +110,78 @@ int SRRIPPolicy::getVictim(std::vector<CacheLine>& set) {
     // return 0;
 }
 
+/**
+ * Mark a hit cache line with by setting
+ * its RRPV (Re-Reference Prediction Value) to 0,
+ * which indicates it is recently used.
+ * @param set cache set
+ * @param way index of target cache line
+ * @param cycle the current execution cycle
+ */
 void BIPPolicy::onHit(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    (void)set;
-    (void)way;
-    (void)cycle;
-    // TODO: hits still become MRU.
+    if (static_cast<size_t>(way) >= set.size()) return;
+    set[way].rrpv = 0; // equivalent to being MRU
+    set[way].last_access = cycle; // why not, idk if used
+    
+    // (void)set;
+    // (void)way;
+    // (void)cycle;
+    // // TODO: hits still become MRU.
 }
 
+/**
+ * On a cache miss, set the provided cache line
+ * to either have RRPV = 0 (recently used, low probability) or RRPV = 2 (old, high probability)
+ * @param set cache set
+ * @param way index of target cache line
+ * @param cycle the current execution cycle
+ */
 void BIPPolicy::onMiss(std::vector<CacheLine>& set, int way, uint64_t cycle) {
-    (void)set;
-    (void)way;
-    (void)cycle;
+    insertion_counter = (insertion_counter + 1) % throttle;
+    if (static_cast<size_t>(way) >= set.size()) return;
+
+    // for insertion_counter not equal to throttle we insert as LRU
+    // otherwise MRU
+    if (insertion_counter != 0) {
+        set[way].rrpv = 2; // as LRU with high prob
+    }
+    else {
+        set[way].rrpv = 0; // as MRU
+    }
+
+    set[way].last_access = cycle;
+
+    // (void)set;
+    // (void)way;
+    // (void)cycle;
     // TODO: mostly insert at LRU position, but occasionally insert at MRU.
     // Hint: use insertion_counter and throttle.
 }
 
+/**
+ * Get the index of the cache line to evict
+ * @param set cache set
+ * @return index of the victim in set
+ */
 int BIPPolicy::getVictim(std::vector<CacheLine>& set) {
-    (void)set;
-    // TODO: BIP usually uses the same victim selection as LRU.
-    return 0;
+    // i don't know why the same as LRU
+    // if same, then i have to use last_access timestamp
+    // but then i have to make the last_access as zero everytime for LRU
+
+    // ill implement like SRRIP instead
+    // but actually it's the same cuz we still try to get the LRU
+    for (size_t i = 0; i < set.size(); i++) {
+        if (!set[i].valid || set[i].rrpv == 3) return i; // prioritize invalid ones first
+    }
+    for (size_t i = 0; i < set.size(); i++) {
+        set[i].rrpv = std::min(set[i].rrpv + 1, 3);
+    }
+
+    return getVictim(set);
+
+    // (void)set;
+    // // TODO: BIP usually uses the same victim selection as LRU.
+    // return 0;
 }
 
 ReplacementPolicy* createReplacementPolicy(std::string name) {
