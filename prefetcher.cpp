@@ -40,7 +40,7 @@ std::vector<uint64_t> NextLinePrefetcher::calculatePrefetch(uint64_t current_add
  */
 std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr, bool miss) {
     uint32_t threshold = 1; // maximum confidence value, 1 is best for our trace!
-    int64_t prefetch_count = 1; // TODO might prefetch same twice
+    int64_t prefetch_count = 2; // TODO might prefetch same twice
 
     //* calculate address with no bottom bits
     uint64_t current_block = (current_addr / block_size) * block_size;
