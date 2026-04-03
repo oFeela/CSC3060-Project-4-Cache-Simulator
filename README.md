@@ -44,13 +44,13 @@ Person B
 
 ### Task 3
 Person A
-- Implement SRRIP::onHit() in repl_policy.cpp
+- ~~Implement SRRIP::onHit() in repl_policy.cpp~~
 
-- Implement SRRIP::onMiss() in repl_policy.cpp
+- ~~Implement SRRIP::onMiss() in repl_policy.cpp~~
 
-- Implement SRRIP::getVictim() in repl_policy.cpp
+- ~~Implement SRRIP::getVictim() in repl_policy.cpp~~
 
-- Implement StridePrefetcher::calculatePrefetch() in prefetcher.cpp
+- ~~Implement StridePrefetcher::calculatePrefetch() in prefetcher.cpp~~
 
 Person B
 - ~~Implement BIP::onHit() in repl_policy.cpp~~
@@ -61,6 +61,9 @@ Person B
 
 - ~~Implement NextLinePrefetcher::calculatePrefetch() in prefetcher.cpp~~
 
-- Implement install_prefetch() in memory_hierarchy.cpp
+- ~~Implement install_prefetch() in memory_hierarchy.cpp~~
 
-- Call prefetcher from CacheLevel::access() in memory_hierarchy.cpp
+- ~~Call prefetcher from CacheLevel::access() in memory_hierarchy.cpp~~
+
+### Finale
+- Design our own prefetcher
