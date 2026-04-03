@@ -13,6 +13,12 @@ std::vector<uint64_t> NextLinePrefetcher::calculatePrefetch(uint64_t current_add
     (void)miss;
     std::vector<uint64_t> prefetches;
 
+    // R shifts by log2(block_size)
+    // shift L back
+    uint64_t current_block = (current_addr / block_size) * block_size;
+    uint64_t next_block = current_block + block_size;
+    prefetches.push_back(next_block);
+
     // TODO: Task 3
     // 1. Align current_addr down to the current cache block.
     // 2. Prefetch the next sequential block.
@@ -31,7 +37,7 @@ std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr,
     (void)miss;
 
     //* calculate address with no bottom bits
-    uint64_t current_block = current_addr / block_size;
+    uint64_t current_block = (current_addr / block_size) * block_size;
 
     // first time access
     if (!this->has_last_block) {

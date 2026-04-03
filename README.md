@@ -59,7 +59,7 @@ Person B
 
 - ~~Implement BIP::getVictim() in repl_policy.cpp~~
 
-- Implement NextLinePrefetcher::calculatePrefetch() in prefetcher.cpp
+- ~~Implement NextLinePrefetcher::calculatePrefetch() in prefetcher.cpp~~
 
 - Implement install_prefetch() in memory_hierarchy.cpp
 
