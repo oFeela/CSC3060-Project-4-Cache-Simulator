@@ -10,3 +10,8 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+cache_sim.exe
+main.o
+memory_hierarchy.o
+prefetcher.o
+repl_policy.o
