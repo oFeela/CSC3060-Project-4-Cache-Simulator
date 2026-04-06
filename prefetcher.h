@@ -30,7 +30,7 @@ private:
 public:
     explicit RegionPrefetcher(uint32_t bs) : block_size(bs) {}
     std::vector<uint64_t> calculatePrefetch(uint64_t current_addr, bool miss) override;
-    std::string getName() override { return "NextLine"; }
+    std::string getName() override { return "Region"; }
 };
 
 class StridePrefetcher : public Prefetcher {
