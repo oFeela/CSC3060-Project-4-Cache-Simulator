@@ -18,7 +18,7 @@ Parsing the memory address into tag and set index:
 
 The hit/miss logic and statistics + LRU policy:
 - Hit detection logic in ``CacheLevel::access()``
-- Miss handling (victim selection, write-back, fetch, install) in ``CacheLevel::access()``
+- Miss handling (victim selection, write-back, fetch, install) in ``CacheLevel::access()`` and its helpers
 - ``LRU::onHit()`` in repl_policy.cpp
 - ``LRU::onMiss()`` in repl_policy.cpp
 - ``LRU::getVictim()`` in repl_policy.cpp
@@ -29,7 +29,7 @@ Connecting L2 (a new CacheLevel object) to L1:
 - Create L2 CacheLevel object in main.cpp
 - Connect L1 next_level pointer to L2 in main.cpp
 - Set L2 next_level pointer to MainMemory in main.cpp
-- Statistics of L2 are automatically implemented already because it is still a CacheLevel object, which is already implemented in Task 1
+- Statistics of L2 are automatically there because it is still a CacheLevel object, which is already implemented in Task 1
 
 **Task 3**:
 
@@ -49,7 +49,7 @@ Implementing prefetchers:
 
 Custom policies and prefetchers:
 - ``ReverseSRRIP`` policy. We don't know what to call it, but it behaves the other way around as normal SRRIP. Prioritize cache line that was hit to be evicted first.
-- ``RegionPrefetcher`` prefetcher. Prefetches a region around a memory block.
+- ``RegionPrefetcher`` prefetcher. Prefetches a region of radius 64 blocks around a memory block.
 
 ## Address Mapping Explanation
 How was block offset, set index, and tag computed?
@@ -74,7 +74,7 @@ Other testing via ``./cache_sim trace_sanity.txt cac  he_size associativity bloc
 - ``./cache_sim trace_sanity.txt 1048576 1 1 1 100``, 1073741824 number of sets. The program should take very long (which it did) because linear allocation simply does not support that amount of sets.
 - ``./cache_sim trace_sanity.txt 1048576 1 1024 1 100``, 1048576 number of sets (20 bits are responsible for the index now). It resulted in 36.71 cycles AMAT (faster), which makes sense because we have more sets to utilize now.
 - ``./cache_sim trace_sanity.txt 1048576 1 1024 2 100``, just changing the L1 cache latency (double now). Result is 37.71 cycles AMAT with total cycles of 2112 (from 2056), in which 2000 were from the main memory accesses (200 accesses in total with 100 cycles latency), so the statistic is correct.
-- ``./cache_sim trace_sanity.txt 1048576 1 1024 1 500``, just changing the cache and memory latency. Total cycle i snow 10056 (from 2056), so also correct.
+- ``./cache_sim trace_sanity.txt 1048576 1 1024 1 500``, just changing the cache and memory latency. Total cycle is now 10056 (from 2056), so also correct.
 
 Overall, from the tests we did, it seems it's correct (even though we don't know rigorously).
 
@@ -86,7 +86,8 @@ How does L1, L2, and memory interact?
 - MainMemory definitely has the data and will return it to L2
 - L2 will pass it to L1, and L1 pass it to the CPU to be processed
 - Each time we consult next level in hierarchy, data latency increases
-- Since write back is used, the data block from the next line will also be copied to the previous line. For example on a full miss (have to access data from MainMemory), L2 and L1 will copy the data, creating a new cache line inside them respectively.
+- On a miss, data from the next line will be copied to the current line. For example on a full miss (have to access data from MainMemory), L2 copies the data from main memory, and L1 copies from L1, creating a new cache line inside them respectively.
+- Lastly, since write back mechanism is used, when a dirty line is evicted, it will have to write its content to the next level (this is done inside ``CacheLevel::write_back_victim()`` helper). A line in a cache is dirty if its content was written on during runtime. Also, set index and tag uniquely define a memory address, so if content of a line was changed, it corresponds uniquely to a memory address content.
 
 What changed after adding L2?
 - As seen in the difference of ``make task1`` and ``make task2`` output.
@@ -94,15 +95,15 @@ What changed after adding L2?
 - The total AMAT also dropped because L2 can accomodate more data and still be faster than Main Memory to provide the data to L1.
 - Without L2, we would have to pay MainMemory data latency for every L1 miss
 - With L2, we have more chance of finding the data in a relatively faster L2 cache before consulting Main Memory and paying the long latency
-- If a data happened to be evicted in L1, L2 will most likely have this data stored still (because bigger in size). So in future accesses, misses in L1 only need to consult L2 instead of MainMemory.
+- If a data happened to be evicted in L1, L2 will most likely have this data stored still (because bigger in size, so it can accommodate). So in future accesses, misses in L1 only need to consult L2 instead of MainMemory.
 
 ## Task 3 Design Choices
 Which replacement policies and prefetchers were implemented?
-- LRU, SRRIP, BIP policies. They mostly perform the same from our experiments because they behave quite similar in how they determine victim line.
+- LRU, SRRIP, BIP policies.
 - NextLine and Stride prefetchers.
 - Additionally, we implemented ReverseSRRIP policy and RegionPrefetcher.
 
-We were able to still get under the ``BEST_AMAT`` without designing our own policies or prefetchers. So, the custom design was mostly just to further lower the AMAT.
+We were able to still get under the ``BEST_AMAT`` without designing our own policies or prefetchers (had to use associativity higher than 8). So, the custom design was mostly just to further lower the AMAT.
 
 Note that in our design, we do not account for overflows of the memory address representation, etc., since this is just a simulation. We just assume the memory address is small enough to not overflow.
 
@@ -246,17 +247,20 @@ Metrics:
 Why does it perform well? Well, it was already explained in the trace analysis section. But in summary:
 - Our trace has a lot of strided accesses. We use L1 to take care of this using StridePrefetcher.
 - These strided accesses are mostly forward, so old data is not really useful anymore. That's why ReverseSRRIP policy works well for our trace.
-- There might be some irregular data patterns in between the strides. In the case that these data will be required in future accesses, we utilize L2 that has higher size to take care of this. This is also why L2 has the Region prefetcher to fetch more of these irregular data. Keep in mind that we limit the size of the region to minimize cache pollution. 
+- There might be some irregular data patterns in between the strides. In the case that these data will be required in future accesses, we utilize L2 that has higher size to take care of this. This is also why L2 has the Region prefetcher to fetch more of these irregular data. Keep in mind that we limit the size of the region to prevent severe cache pollution from happening. 
 
 Now, because the nature of our prefetcher design (fetching a large region), there may be cache pollution happening. This explains why high associativity (fewer number of sets) doesn't work as well, because there might be too many evicted useful lines (cache pollution)
 
 How/where it will fail?
 - Probably when the trace is not dominated by strided accesses
-- The trace has high temporal locality. Because our design exploits low temporal locality to evict old data as soon as possible, so if the trace was of high temporal locality, our design would have poor performance.
+- When a trace has high temporal locality. Because our design exploits low temporal locality to evict old data as soon as possible, so if the trace was of high temporal locality, our design would most likely have poor performance.
 
 ## External Resources and AI Usage
 - GitHub to collaborate: https://github.com/oFeela/CSC3060-Project-4-Cache-Simulator
 
 - Bryan's DeepSeek chat: https://chat.deepseek.com/share/zmj7wwelgtwgty9ru2
 
-- Geo's chat:
+- Geoffrey's chat:
+
+## Note
+Please note that our trace (the one generated by the Python script) is `my_trace.txt`. But it was in UTF-16 encoding, so it didn't work during testing. We converted it to UTF-8 (the file `my_trace_utf8.txt`), and used this one instead for Task 3.
