@@ -66,4 +66,4 @@ Person B
 - ~~Call prefetcher from CacheLevel::access() in memory_hierarchy.cpp~~
 
 ### Finale
-- Design our own prefetcher
+- ~~Design our own prefetcher~~
