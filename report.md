@@ -172,8 +172,7 @@ The patterns we observed and how it influenced our design:
     Total Cycles:       12031
     AMAT:               1.43 cycles
   ```
-- **In this case, high associativity impacts our L2, not L1. One possible explanation from us is that because high associativity means less sets. Although there will be more ways per sets, we utilize L2 a lot on L1 prefetching. Some useful data from L2 might be evicted too early. In contrast, lower associativity means more sets, so the data in L2 is more distributed.**
-<!-- TODO bry, with 128 assoc but L2 using Nextline prefetch, the miss rate isn't that bad actually. Maybe our region prefetch fills up everything if we use 128 assoc idk (see experiment below, I just changed L2 prefetcher) -->
+- In this case, high associativity impacts our L2, not L1. One possible explanation from us is that because high associativity means less sets. Although there will be more ways per sets, we utilize L2 a lot for region prefetching. Some useful data from L2 might be evicted too early. In contrast, lower associativity means more sets, so the data in L2 is more distributed.
     ```
     Constructed L2: 128KB, 128-way, 4cyc, [LRU + NextLine]
     Constructed L1: 32KB, 128-way, 1cyc, [ReverseSRRIP + Stride]
@@ -192,9 +191,7 @@ The patterns we observed and how it influenced our design:
     Total Cycles:       11631
     AMAT:               1.38 cycles
     ```
-**CHECK ATAS BAWAH PLS**
-
-<!-- TODO I also ran py script with ASSOC=128, and the unique sets turun banyak while the unique blocks needed are a lot, maybe the working blocks and prefetch blocks (from RegionPrefetcher) are competing/trashing ??? -->
+- Here, we change L2 to use ``NextLine`` prefetcher, improving miss rate, suggesting that our ``RegionPrefetcher`` prefetcher probably pollutes the small set number we have due to increased ``ASSOC`` which causes trashing and eviction of useful cache blocks.
     ```
     Most frequently used L1 sets
     2: 1877 (22.27%)
@@ -236,6 +233,7 @@ The patterns we observed and how it influenced our design:
     [  7936,   8192) reads= 248 writes=   8 unique_blocks= 249 unique_sets=   4
     [  8192,   8427) reads= 228 writes=   7 unique_blocks= 228 unique_sets=   4
     ```
+- The trace analyzer for the updated ``ASSOC=128`` shows that we have so much unique block demands for many windows but only have limited sets, combined with us prefetching 128 blocks on each access, might pollute the sets.
 
 4. Occasional Access of Data Outside Stride Pattern
 - By the time it accesses a data with irregular pattern (occasionally), that data would probably not be inside L1 because L1 continously performs stride prefetching, so some still useful irregular data might be evicted.
