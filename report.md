@@ -14,7 +14,6 @@ Parsing the memory address into tag and set index:
 - ``get_index()`` in memory_hierarchy.cpp
 - ``get_tag()`` in memory_hierarchy.cpp
 - ``reconstruct_addr()`` in memory_hierarchy.cpp
-- ``reconstruct_addr()`` in memory_hierarchy.cpp
 
 The hit/miss logic and statistics + LRU policy:
 - Hit detection logic in ``CacheLevel::access()``
@@ -62,11 +61,12 @@ How do those values above change when cache geometry change?
 - Set index depends on ``cache_size``, ``block_size``, and ``associativity``. Keeping others fixed, as ``cache_size`` increases, set index bits size increases; as ``block_size`` or/and ``associativity`` increases, set index bits size decrease instead.
 - Tag bits size decreases as block offset bits or/and set index bits size increase.
 - Keep in mind that all the cache parameters here need to be chosen in such a way so that the bits size of them make sense (e.g., no negative size, no size greater than 64 since we only have 64 bits at most, and so on).
+- The parameters also need to be powers of two so that their quotient is a power of two
 
 ## Task 1 Testing
 First testing via ``make task1`` $\Rightarrow$ matches
 
-Other testing via ``./cache_sim trace_sanity.txt cac  he_size associativity block_size L1_latency MEM_latency``:
+Other testing via ``./cache_sim trace_sanity.txt cache_size associativity block_size L1_latency MEM_latency``:
 - ``./cache_sim trace_sanity.txt 1 4 256 1 100``, fully-associative
 - ``./cache_sim trace_sanity.txt 4 4 1024 1 100``, fully-associative but bigger cache size
 - ``./cache_sim trace_sanity.txt 1 4 512 1 100``, parameters result in unreasonble cache geometry (only 2 sets but 4 associativity) $\Rightarrow$ error, so correct
@@ -153,8 +153,7 @@ The patterns we observed and how it influenced our design:
       [  4352,   4608) reads= 249 writes=   7 unique_blocks= 249 unique_sets=  64
     ```
 - There are some trace window with 20 unique blocks into 1 unique set. This means we need ``ASSOC > 20`` to accomodate and prevent cache trashing, otherwise L1 misses will increase if we keep throwing out useful data.
-- Although this is the case, by our design choice, we still have L2 which would account for the misses in L1. But having high ``ASSOC`` would really benefit L1 to have higher hit rate. 
-- This is why we chose the ``ASSOC`` of 32 and found any higher would either have no impact or worsen the AMAT. Example (our best is 1.26 with ``ASSOC = 32``):
+- We chose the ``ASSOC`` of 32 and found any higher would either have no impact or worsen the AMAT. Example (our best is 1.26 with ``ASSOC = 32``):
   ```
   Constructed L2: 128KB, 128-way, 4cyc, [LRU + Region]
   Constructed L1: 32KB, 128-way, 1cyc, [ReverseSRRIP + Stride]
@@ -173,13 +172,76 @@ The patterns we observed and how it influenced our design:
     Total Cycles:       12031
     AMAT:               1.43 cycles
   ```
-- In this case, high associativity impacts our L2, not L1. One possible explanation from us is that because high associativity means less sets. Although there will be more ways per sets, we utilize L2 a lot on L1 prefetching. Some useful data from L2 might be evicted too early. In contrast, lower associativity means more sets, so the data in L2 is more distributed.
+- **In this case, high associativity impacts our L2, not L1. One possible explanation from us is that because high associativity means less sets. Although there will be more ways per sets, we utilize L2 a lot on L1 prefetching. Some useful data from L2 might be evicted too early. In contrast, lower associativity means more sets, so the data in L2 is more distributed.**
+<!-- TODO bry, with 128 assoc but L2 using Nextline prefetch, the miss rate isn't that bad actually. Maybe our region prefetch fills up everything if we use 128 assoc idk (see experiment below, I just changed L2 prefetcher) -->
+    ```
+    Constructed L2: 128KB, 128-way, 4cyc, [LRU + NextLine]
+    Constructed L1: 32KB, 128-way, 1cyc, [ReverseSRRIP + Stride]
+
+    === Starting Simulation ===
+
+    === Simulation Results ===
+    [L1] Hit Rate: 98.50% (Access: 8427, Miss: 126, WB: 161)
+        Prefetches Issued: 6248
+    [L2] Hit Rate: 96.14% (Access: 6535, Miss: 252, WB: 1)
+        Prefetches Issued: 1624
+    [Main Memory] Total Accesses: 1877
+
+    Metrics:
+    Total Instructions: 8427
+    Total Cycles:       11631
+    AMAT:               1.38 cycles
+    ```
+**CHECK ATAS BAWAH PLS**
+
+<!-- TODO I also ran py script with ASSOC=128, and the unique sets turun banyak while the unique blocks needed are a lot, maybe the working blocks and prefetch blocks (from RegionPrefetcher) are competing/trashing ??? -->
+    ```
+    Most frequently used L1 sets
+    2: 1877 (22.27%)
+    1: 3302 (39.18%)
+    3: 1626 (19.30%)
+    0: 1622 (19.25%)
+    Per-window summary (window size = 256 accesses)
+    [     0,    256) reads= 225 writes=  31 unique_blocks=  32 unique_sets=   4
+    [   256,    512) reads= 245 writes=  11 unique_blocks= 193 unique_sets=   4
+    [   512,    768) reads= 240 writes=  16 unique_blocks= 256 unique_sets=   4
+    [   768,   1024) reads= 243 writes=  13 unique_blocks= 256 unique_sets=   4
+    [  1024,   1280) reads= 256 writes=   0 unique_blocks= 256 unique_sets=   4
+    [  1280,   1536) reads= 256 writes=   0 unique_blocks= 256 unique_sets=   4
+    [  1536,   1792) reads= 256 writes=   0 unique_blocks= 256 unique_sets=   4
+    [  1792,   2048) reads= 256 writes=   0 unique_blocks= 256 unique_sets=   4
+    [  2048,   2304) reads= 256 writes=   0 unique_blocks= 233 unique_sets=   4
+    [  2304,   2560) reads= 256 writes=   0 unique_blocks=  23 unique_sets=   2
+    [  2560,   2816) reads= 256 writes=   0 unique_blocks=  14 unique_sets=   1
+    [  2816,   3072) reads= 252 writes=   4 unique_blocks=  34 unique_sets=   1
+    [  3072,   3328) reads= 244 writes=  12 unique_blocks=  20 unique_sets=   1
+    [  3328,   3584) reads= 243 writes=  13 unique_blocks=  20 unique_sets=   1
+    [  3584,   3840) reads= 243 writes=  13 unique_blocks=  20 unique_sets=   1
+    [  3840,   4096) reads= 243 writes=  13 unique_blocks=  20 unique_sets=   1
+    [  4096,   4352) reads= 238 writes=  18 unique_blocks= 160 unique_sets=   4
+    [  4352,   4608) reads= 249 writes=   7 unique_blocks= 249 unique_sets=   4
+    [  4608,   4864) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  4864,   5120) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  5120,   5376) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  5376,   5632) reads= 249 writes=   7 unique_blocks= 249 unique_sets=   4
+    [  5632,   5888) reads= 248 writes=   8 unique_blocks= 249 unique_sets=   4
+    [  5888,   6144) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  6144,   6400) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  6400,   6656) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  6656,   6912) reads= 249 writes=   7 unique_blocks= 249 unique_sets=   4
+    [  6912,   7168) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  7168,   7424) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  7424,   7680) reads= 248 writes=   8 unique_blocks= 248 unique_sets=   4
+    [  7680,   7936) reads= 249 writes=   7 unique_blocks= 249 unique_sets=   4
+    [  7936,   8192) reads= 248 writes=   8 unique_blocks= 249 unique_sets=   4
+    [  8192,   8427) reads= 228 writes=   7 unique_blocks= 228 unique_sets=   4
+    ```
 
 4. Occasional Access of Data Outside Stride Pattern
 - By the time it accesses a data with irregular pattern (occasionally), that data would probably not be inside L1 because L1 continously performs stride prefetching, so some still useful irregular data might be evicted.
 - We already hypothesize that StridePrefetcher would be bad because of redundancy with L1, so we started with NextLinePrefetcher for L2. But then because of this pattern, we equip L2 with RegionPrefetcher (custom-made prefetcher).
 - When L1 consults L2, it will cause L2 to prefetch an area around the data requested. This works because L1 would most likely request data in regular strides and L2 would eventually contain the irregular data between the stride lengths. So if L1 ever needs to access those irregular pattern data, L2 has it for L1.
-- Prefetching in bulk also doesn't hurt latency because it occurs asynchronously under the assignment simplification assumption, so we can leverage this RegionPrefetcher while being careful not to pollute L2 too much (systematic testing gives 128B as optimal, i.e., $\pm$ 64)
+- Prefetching in bulk also doesn't hurt latency because it occurs asynchronously under the assignment simplification assumption, so we can leverage this RegionPrefetcher while being careful not to pollute L2 too much (systematic testing gives 128 blocks as optimal, i.e., $\pm$ 64 block radius)
 - Leveraging this gives us near perfect Hit Rate for L2:
   ```
   === Simulation Results ===
@@ -211,8 +273,8 @@ The table above shows how we tried to find the best parameters value.
 - For the BLOCK_SIZE, we actually settled with 64 first because it was the default value, which turned out to be the best performing.
 - For policy, L1 works best with SRRIP/BIP-like policy, whereas L2 policy doesn't change the AMAT at all. This aligns with our hypothesis. 
 - L1 is mainly for the strided accesses (and they are of poor temporal locality), and should evict lines based on hits/misses (so we also additionally implemented ReverseSRRIP to evict hit lines with highest priority). 
-- L2 is mainly for irregular pattern. We found that LRU works best, I guess because it prioritizes old data to be evicted, which balances out for this irregularity.
-- Because of our hypothesis on how to utilize L2, naturally using NextLine for L2 was our initial choice. But then RegionPrefetcher was implemented to fetch a larger region, and it lowered the AMAT.
+- L2's role is to serve the misses from L1 for the irregular pattern accesses. We found that LRU works best because it prioritizes least recently used data in L2 to be evicted. This could be because L1 is already serving the demand for that data so it never consults L2 for that specific data. What needs to be retained in L2 are those things not inside L1, other data that are not being used are perfect candidates to be evicted, hence LRU is good. 
+- Because of our hypothesis on how to utilize L2, naturally using NextLine for L2 was our initial choice. But then RegionPrefetcher was implemented to fetch a larger region, and it lowered the AMAT. Initially, we tried increasing the *prefetch_count* of ``NextLine`` prefetcher to get the next multiple blocks and it worked really well, so we made ``RegionPrefetcher``
 
 ## Best Configuration and Discussion
 Our best configuration is:
@@ -261,6 +323,7 @@ How/where it will fail?
 - Bryan's DeepSeek chat: https://chat.deepseek.com/share/zmj7wwelgtwgty9ru2
 
 - Geoffrey's chat:
+https://chat.deepseek.com/share/8shf42y1al1mkknp5c
 
 ## Note
 Please note that our trace (the one generated by the Python script) is `my_trace.txt`. But it was in UTF-16 encoding, so it didn't work during testing. We converted it to UTF-8 (the file `my_trace_utf8.txt`), and used this one instead for Task 3.
