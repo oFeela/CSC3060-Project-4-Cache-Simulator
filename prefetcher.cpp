@@ -83,8 +83,8 @@ std::vector<uint64_t> StridePrefetcher::calculatePrefetch(uint64_t current_addr,
     else {
         last_stride = current_stride;
 
-        // clamped decrement to 1
-        confidence = (confidence-1 > 0) ? confidence-1 : 1;
+        // pattern broken
+        confidence = 0;
     }
 
     last_block = current_block; // update
